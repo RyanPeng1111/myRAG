@@ -1,0 +1,15 @@
+.venv/
+.cache/
+models/
+data/
+logs/
+.env
+config.json
+__pycache__/
+*.pyc
+vendor/
+wheelhouse/
+backups/
+.offline-test/
+*.log
+dist/

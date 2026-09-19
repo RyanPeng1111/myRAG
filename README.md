@@ -1,0 +1,157 @@
+# myRAG — 原生 Windows 研究知識庫 Demo
+
+以 **LightRAG 1.5.7** 的伺服器、文件索引、向量檢索、圖譜引擎與管理 UI 為基底，增加 Windows 啟動流程、CPU Embedding/OCR、研究搜尋入口、Office 圖片及來源定位轉接。不是重寫 RAG 引擎。
+
+## 現在這台電腦怎麼用
+
+專案位於 `D:\proj\myRAG`。如果服務仍運作，開啟：
+
+**http://127.0.0.1:9621/demo/**
+
+若服務已停止，雙擊 **Start.cmd**。資料會保留，停止時在服務視窗按 Ctrl+C。不要啟動多個相同資料目錄的服務。Start.cmd 不會調整 PowerShell 執行政策或防火牆。
+
+也可雙擊 **Stop.cmd** 要求服務完成目前請求並保存索引後關閉，適用於這次預先啟動的背景服務。儲存模型設定後，先 Stop.cmd，再 Start.cmd。正在匯入大型文件時請等候關閉完成。
+
+可先問：
+
+- 有哪些降低電池溫升的實驗？
+- 未塗層 48°C 陶瓷塗層 42°C（會找到含原圖的 PPT）
+- 比較陶瓷塗層與石墨散熱片的效果與限制
+- 更換黏著劑會影響什麼？
+- 新進研發人員如何確認實驗條件及單位？
+
+全部範例數據均為**合成軟體測試資料**，並非真實研究成果。未設定 LLM 時只能搜尋證據，介面停用「根據證據回答」。不提供假回答或假知識圖譜。
+
+## 這一版的邊界
+
+| 能力 | 狀態 |
+|---|---|
+| Windows / CPU / 不使用 Docker、WSL、Linux | 已實測啟動 |
+| LightRAG 原生管理 UI、REST API | 保留 `/webui/`、`/docs` |
+| 多語向量搜尋 | 本機 FastEmbed + ONNX Runtime，384 維 |
+| Office/文件 | TXT、MD、PPTX、DOCX、XLSX、PDF、PNG、JPG |
+| 圖片文字 | CPU RapidOCR，結果保留辨識標記，須核對原圖 |
+| 圖片來源 | PPT/Word/PDF 嵌入圖片的 PNG 預覽＋原檔下載 |
+| 來源位置 | PDF 頁碼、PPT 投影片、Excel 工作表/列/儲存格；Word 僅全文 |
+| 公司 LLM、視覺問答、圖譜抽取 | 接口已接線，尚無公司端點，效果未驗證 |
+| 公司 Embedding API | OpenAI 相容模式可設定，尚未在公司實測 |
+| MinIO、Oracle、PostgreSQL | 本 demo 不需要，尚未整合 |
+| 一萬份文件 / 多人權限 / 正式維運 | 尚未驗證；本地檔案儲存只供單機 demo |
+
+解析限制：不讀 PPT 講者備註；PPT 頁面是解析內容檢視，未還原完整排版；Word 未還原頁碼與原始圖文順序；Excel 讀取公式文字而不計算公式，內嵌圖表/圖片尚未支援。PDF 未保證複雜版面的閱讀順序。OCR 是文字辨識，不代表理解圖表關係。舊版 `.doc/.ppt/.xls` 請先另存為新格式。SVG/EMF 等無法解碼的嵌入圖不會宣稱成功理解。
+
+## 第一次安裝 / 帶入公司
+
+需要 **Windows x64、Python 3.12 x64**。已驗證的本機 Python 為 3.12.14；不直接使用本機其他專案的 Python 3.14。獨立 `.venv` 不修改全域套件。
+
+有可用的套件來源時，在專案目錄執行：
+
+```powershell
+.\Setup.ps1
+.\Prepare.ps1
+.\Start.ps1
+```
+
+若 Python 不在 `py` launcher 裡：
+
+```powershell
+.\Setup.ps1 -Python 'D:\Python312\python.exe'
+```
+
+`Prepare.ps1` 是明確的連外準備階段，下載本機 Embedding 與 tokenizer；啟動階段使用本地模型，不臨時下載。OCR 模型包含於套件 wheel 中。企業 CA 可設定 `config.json` 的 `ca_bundle`，不關閉 TLS 驗證。
+
+**只有 GitHub 程式碼並不足以離線安裝**。若內網不能抓套件/模型，先在可連網的同架構 Windows 機器執行：
+
+```powershell
+.\Prepare-Offline.ps1
+```
+
+帶入以下項目：程式碼、`requirements-win-py312.lock`、`wheelhouse/`、`models/`、`.cache/tiktoken/`，以及公司核准的 Python 3.12 x64 安裝資源。在內網執行：
+
+```powershell
+.\Setup.ps1 -Offline -Python 'D:\Python312\python.exe'
+.\Start.ps1
+```
+
+不要複製 `.venv` 當作可攜環境，也不要把你個人的 `config.json` 或真實公司資料提交 GitHub。Nexus 可透過標準 pip 設定指定，公司認證資訊不要寫在專案裡。
+
+本機已產出 `dist/myRAG-source.zip`（程式碼）與 `dist/myRAG-offline-resources.zip`（套件與模型，約 440 MB）。解壓到同一個專案資料夾，再依上方離線安裝步驟操作；若只拿程式碼進內網，仍需從核准來源取得模型與套件。`dist/manifest.json` 提供 SHA-256。這些包不含密鑰、使用者文件或 Python 安裝程式。可執行 `python tools/package.py` 重新打包。Git 儲存庫已在本機初始化，尚未上傳 GitHub。
+
+## 模型設定
+
+在 UI「模型設定」填入 **OpenAI 相容 Base URL、API key、model name**，儲存後重啟。網址要填供應商提供的 API base（通常以 `/v1` 結尾），不是 `/chat/completions` 完整路徑。金鑰只保存在本機 `config.json`，不回傳到瀏覽器，檔案已被 Git 忽略。
+
+預設 `graph_enabled=false`，文件只建向量。打開圖譜後，新匯入文件才會呼叫 LLM 抽取關係。既有文件不會自動補建圖譜：先在文件清單移除該文件索引，再重新匯入。圖譜關係是模型抽取結果，不是已證實的因果。
+
+公司提供 Embedding 時，修改 `config.json` 的 `embedding`：
+
+```json
+{
+  "mode": "api",
+  "base_url": "https://company-host/v1",
+  "api_key": "YOUR_KEY",
+  "model": "YOUR_EMBEDDING_MODEL",
+  "dimension": 1024,
+  "max_tokens": 512
+}
+```
+
+維度必須與實際模型一致。切換 Embedding 模型/端點後，啟動器會拒絕混用既有索引。請先停機備份 `data/`，把整個 `data/` 移到另一個備份目錄，再啟動並重新匯入原始文件。**不要只刪 profile 檔案繞過檢查。** 本 demo 不提供跨模型自動遷移。
+
+## 文件操作與 API
+
+請從 **myRAG 文件資料庫** 匯入，才能建立完整的圖片／來源對應。直接使用 LightRAG 進階管理上傳仍可索引，但不會自動獲得本整合層的原圖來源資訊。
+
+- `POST /demo/upload`：multipart `file`；回傳 tracking IDs。送入佇列不等於索引完成。
+- `GET /demo/sources`：查詢原檔與即時索引狀態。
+- `POST /demo/search`：純檢索；`{"query":"降低電池溫升","mode":"naive","limit":6}`。
+- `POST /demo/ask`：LLM 問答；未設定模型時回傳 409，不產生模擬答案。
+- `GET /demo/sources/{id}`：解析內容、來源位置及圖片 metadata。
+- `GET /demo/download/{id}`：下載原始文件。
+- `DELETE /demo/sources/{id}/index`：移除索引；原檔與圖片保留，能下載後重新匯入。
+- `/query/data`、`/query`、`/query/stream`：上游 REST API。
+
+```powershell
+$body = @{ query = '有哪些降低電池溫升的實驗？'; mode = 'naive'; limit = 6 } | ConvertTo-Json
+Invoke-RestMethod 'http://127.0.0.1:9621/demo/search' -Method Post -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
+```
+
+上游 `file_path` 以內部來源 ID 命名；`/demo/search` 額外提供使用者檔名、位置、source URL 及圖片 URL。影像查詢目前是 OCR／圖片描述的文字檢索，不是跨模態「以圖找圖」。
+
+## 資料與維護
+
+- `data/index/`：LightRAG 檔案型索引、圖譜與狀態。
+- `data/sources/`：原始文件、圖片預覽、解析 metadata。
+- `data/inputs/`：交給上游處理的文字中介檔。
+- `models/`：Embedding 權重。
+- `logs/`：診斷與測試結果，可能包含文件內容，不要隨意對外分享。
+- `config.json`：含模型密鑰；與資料分開保護。
+
+備份前先停機，完整複製 `data/`，另備份設定及模型。還原使用相同套件鎖定版本與 Embedding 模型。不能在服務寫入時直接拷貝部分 JSON 檔作為可靠備份。
+
+此版只綁定 `127.0.0.1`，供本機瀏覽器與 Agent 使用。沒有實作企業使用者權限，不應直接改成對全公司公開。可用專案內的 `tools/doctor.py` 檢查環境。
+
+## 驗證
+
+本機已執行的項目及尚未驗證的範圍見 [VERIFICATION.md](VERIFICATION.md)。
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe tools\offline_probe.py
+# 服務啟動後，先準備並匯入合成範例：
+.\.venv\Scripts\python.exe tools\make_samples.py
+.\.venv\Scripts\python.exe tools\seed.py
+.\.venv\Scripts\python.exe tools\smoke.py
+```
+
+smoke 會匯入一份明確標示的可丟棄測試文件，確認可搜尋後移除其索引；原檔仍保留。LLM 問答、公司 API、真實研究效果與 GraphRAG 品質未由這些測試證明。
+
+## 上游與延伸範圍
+
+- LightRAG：https://github.com/HKUDS/LightRAG ，版本 1.5.7；檢查用原始碼 commit `28ff1b05f2ac3f3e6fa14dd2cd33656579bd0c9c`。
+- 執行時安裝相同版本的 PyPI wheel（含上游 UI），不需 Node/Bun。
+- FastEmbed：https://github.com/qdrant/fastembed ，版本 0.8.0。
+- RapidOCR：https://github.com/RapidAI/RapidOCR ，使用 `rapidocr-onnxruntime==1.4.4`。
+- 自有程式位於 `demo/`、`web/`、`tools/` 與啟動腳本；未修改上游核心。`vendor/LightRAG` 僅供原始碼檢視，不是執行依賴。
+
+帶入企業的資源仍需遵循公司的套件、模型與授權審查。本專案不要求跳過掃描或解除公司安全設定。

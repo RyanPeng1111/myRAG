@@ -1,0 +1,16 @@
+{
+  "port": 9621,
+  "llm": {"base_url": "", "api_key": "", "model": ""},
+  "embedding": {
+    "mode": "local",
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "dimension": 384,
+    "base_url": "",
+    "api_key": "",
+    "max_tokens": 512
+  },
+  "graph_enabled": false,
+  "ocr_enabled": true,
+  "cpu_threads": 4,
+  "ca_bundle": ""
+}
