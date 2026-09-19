@@ -4,6 +4,8 @@
 
 ## 公司電腦：下載 ZIP 後重現（建議使用這個流程）
 
+公開儲存庫：[RyanPeng1111/myRAG](https://github.com/RyanPeng1111/myRAG)；使用 `main` 分支的 [完整 ZIP](https://github.com/RyanPeng1111/myRAG/archive/refs/heads/main.zip)。
+
 需求：Windows x64、Python 3.12 x64。完整儲存庫包含約 440 MB 離線資源分片，GitHub 的 **Code → Download ZIP** 會一併包含這些檔案；公司電腦不需要 Git、Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
 
 1. 從 GitHub 的 **Code → Download ZIP** 取得整包，經公司掃描及核准流程帶入後，使用「解壓縮全部」解開至本機，例如 `D:\proj\myRAG`。進入實際包含 `Bootstrap.cmd` 的資料夾；不要直接在 ZIP 預覽裡執行。
