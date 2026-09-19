@@ -198,6 +198,11 @@ def install(app, cfg, root: Path):
                         summary["state"] = "processed"
                     elif "failed" in states:
                         summary["state"] = "failed"
+                        error_text = ' '.join(str(d.get('error_msg', '')) for d in docs if d.get('status') == 'failed')
+                        if any(s in error_text for s in ('429', 'RateLimitError', 'RESOURCE_EXHAUSTED')):
+                            summary['warnings'] = [*(summary.get('warnings') or []), 'LLM 請求額度或頻率受限，原檔仍保留；請等候額度恢復後重試建索引。']
+                        elif any(s in error_text for s in ('503', 'UNAVAILABLE')):
+                            summary['warnings'] = [*(summary.get('warnings') or []), 'LLM 服務暫時忙碌，原檔仍保留；請稍後重試建索引。']
                     elif states:
                         summary["state"] = "processing"
                     else:
@@ -281,7 +286,9 @@ def install(app, cfg, root: Path):
             # Optional real VLM call only after user configures a company endpoint.
             if llm_ready:
                 from openai import AsyncOpenAI
-                client = AsyncOpenAI(base_url=cfg["llm"]["base_url"], api_key=cfg["llm"].get("api_key") or "unused", timeout=90, max_retries=1)
+                from .llm_gateway import requests_per_minute
+                llm_url = origin + '/local/llm' if requests_per_minute(cfg) else cfg['llm']['base_url']
+                client = AsyncOpenAI(base_url=llm_url, api_key=cfg["llm"].get("api_key") or "unused", timeout=240, max_retries=1)
                 try:
                     for page in pages:
                         for filename in page["images"][:3]:

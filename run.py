@@ -64,6 +64,10 @@ def configure():
         ca = Path(cfg["ca_bundle"]).resolve(strict=True)
         env.update(SSL_CERT_FILE=str(ca), REQUESTS_CA_BUNDLE=str(ca))
     os.environ.update(env)
+    from demo.llm_gateway import requests_per_minute
+    if requests_per_minute(cfg):
+        os.environ['LLM_BINDING_HOST'] = f"http://127.0.0.1:{cfg['port']}/local/llm"
+        os.environ['MAX_ASYNC_LLM'] = '1'
     # Upstream checks existence; all effective settings above remain in process memory.
     (ROOT / ".env").touch(exist_ok=True)
     fingerprint_path.write_text(json.dumps(fingerprint, indent=2), encoding="utf-8")
@@ -104,6 +108,8 @@ def main():
         background_tasks.add_task(setattr, server, "should_exit", True)
         return {"message": "Stopping myRAG gracefully."}
 
+    from demo.llm_gateway import install_gateway
+    install_gateway(app, cfg)
     install(app, cfg, ROOT)
     print(f"\nmyRAG: http://127.0.0.1:{cfg['port']}/demo/\nCtrl+C to stop. Data stays in {ROOT / 'data'}\n", flush=True)
     server.run()
