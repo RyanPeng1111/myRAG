@@ -2,6 +2,19 @@
 
 以 **LightRAG 1.5.7** 的伺服器、文件索引、向量檢索、圖譜引擎與管理 UI 為基底，增加 Windows 啟動流程、CPU Embedding/OCR、研究搜尋入口、Office 圖片及來源定位轉接。不是重寫 RAG 引擎。
 
+## UI／UX 改版：ui-ux-redesign
+
+此分支提供新的研究對話工作區；原本穩定版本仍保留在 `main`。試用新版請下載 [ui-ux-redesign 完整 ZIP](https://github.com/RyanPeng1111/myRAG/archive/refs/heads/ui-ux-redesign.zip)，解壓後使用相同的 Bootstrap.cmd、Start.cmd 流程。沒有增加前端建置步驟或執行依賴。
+
+- 左側切換研究對話、文件資料庫與模型設定；中央提問，右側核對研究證據。
+- 已設定 LLM 時預設「研究問答」；沒有 LLM 時預設「只找證據」。檢索方式在輸入框旁的「語意搜尋」選單內，可切换圖譜＋向量或圖譜全域；未啟用圖譜時會明確停用。
+- Enter 送出、Shift + Enter 換行；範例問題只填入輸入框，送出後才呼叫 API。引用 `[1]`／`【1】` 可點擊定位右側片段，圖片可放大，來源可開啟或下載。
+- 可在本次分頁中開啟與切換多個對話；對話暫存在瀏覽器記憶體，重新整理後清除。每次回答帶入最近 3 組成功問答，每則最多 6,000 字元。
+- 對話上下文供 LLM 生成回答使用；文件檢索仍依照本次問題執行，尚未加入獨立的追問改寫模型。因此追問請保留實驗名稱或研究主題，避免只寫「那它呢」。
+- 文件頁支援拖放／多檔上傳、逐檔進度、檔名／狀態篩選，每 10 秒更新狀態；單檔失敗不會阻擋後續檔案。原始文件的保留與移除索引行為沿用既有 API。
+
+REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 陣列（最多 6 則 `user`／`assistant` 訊息，每則包含 `role`、`content`），原有呼叫方式仍可使用。
+
 ## 公司電腦：下載 ZIP 後重現（建議使用這個流程）
 
 公開儲存庫：[RyanPeng1111/myRAG](https://github.com/RyanPeng1111/myRAG)；使用 `main` 分支的 [完整 ZIP](https://github.com/RyanPeng1111/myRAG/archive/refs/heads/main.zip)。

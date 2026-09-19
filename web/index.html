@@ -1,11 +1,493 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>myRAG · 研究知識庫</title><link rel="stylesheet" href="/demo/style.css?v=mode-buttons-1"></head>
-<body><aside><div class="brand"><span class="mark">m</span> myRAG</div><p class="muted">RESEARCH WORKSPACE</p><nav><button class="nav active" data-tab="search">研究探索</button><button class="nav" data-tab="files">文件資料庫</button><button class="nav" data-tab="settings">模型設定</button><a href="/webui/" target="_blank" rel="noopener">LightRAG 進階管理 ↗</a><a href="/docs" target="_blank" rel="noopener">REST API ↗</a></nav><div class="side-bottom">原生 Windows · CPU<br>Powered by LightRAG<br><span id="connection">連線中…</span></div></aside>
-<main><header><span class="eyebrow">RD KNOWLEDGE EXPLORER</span><span class="pill" id="mode">檢查服務</span></header>
-<section id="search" class="tab"><h1>讓研究，成為下一步的起點。</h1><p class="intro">用自己的描述，尋找實驗、方法與證據。每一份結果都保留來源。</p>
-<div class="search-box"><textarea id="query" placeholder="例如：有沒有人研究過降低電池溫升，同時保持容量的方法？" rows="3"></textarea><div class="search-actions"><div class="retrieval-modes" role="group" aria-label="檢索模式"><button type="button" class="mode-choice active" data-mode="naive" aria-pressed="true">向量檢索</button><button type="button" class="mode-choice" data-mode="mix" aria-pressed="false">圖譜＋向量</button><button type="button" class="mode-choice" data-mode="global" aria-pressed="false">圖譜全域</button></div><span class="grow"></span><button id="ask" class="secondary">根據證據回答</button><button id="submit">搜尋研究 →</button></div></div>
-<div class="suggestions"><button data-query="有哪些降低電池溫升的實驗？">降低溫升</button><button data-query="比較陶瓷塗層與石墨散熱片的效果與限制">比較實驗</button><button data-query="更換黏著劑會影響什麼？">Change impact</button><button data-query="新進研發人員如何確認實驗條件及單位？">新人入門</button></div>
-<p class="notice" id="disclaimer">未設定 LLM 時，提供真實語意搜尋，不產生模擬答案。圖譜需要另外建索引。</p><div id="message" role="status" aria-live="polite"></div><div id="answer" class="answer" hidden></div><div class="result-heading"><h2>研究證據</h2><span id="result-count" class="muted">輸入問題開始探索</span></div><div id="results"><div class="empty"><span>⌕</span><h3>先問一個研究問題</h3><p>已準備模擬研究資料。也可以到「文件資料庫」上傳自己的文件。</p></div></div></section>
-<section id="files" class="tab" hidden><h1>文件資料庫</h1><p class="intro">匯入文件，保留原檔、來源位置與嵌入圖片。</p><div class="upload"><input type="file" id="upload" multiple accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.png,.jpg,.jpeg"><button id="import">匯入選取文件</button><p>每份上限 30 MB。PDF / PPTX / DOCX / XLSX / TXT / MD / PNG / JPG</p><p class="muted">CPU OCR 可辨識圖片文字；圖表理解需公司多模態 LLM。不讀講者備註，舊 Office 格式請先另存新格式。</p></div><div id="upload-message" role="status"></div><div class="result-heading"><h2>原始資料</h2><button class="secondary" id="refresh">重新整理</button></div><div id="file-list"></div></section>
-<section id="settings" class="tab" hidden><h1>連接公司模型</h1><p class="intro">使用 OpenAI 相容 API。搜尋不需要 LLM；問答與圖像理解需要。</p><form id="settings-form" class="panel"><label>API Base URL<input id="base-url" placeholder="https://your-server/v1" type="url"></label><label>Model name<input id="model-name" placeholder="公司提供的 model name"></label><label>API key／存取密碼<input id="api-key" type="password" autocomplete="off" placeholder="留白保留原本的金鑰"></label><label class="check"><input id="graph" type="checkbox"> 新匯入的文件啟用圖譜抽取（會增加 LLM 呼叫量）</label><p class="muted">設定保存在本機 config.json，不會回傳金鑰。儲存後請停止並重啟。原有文件不會自動重新建圖。</p><button>儲存設定</button><div id="settings-message" role="status"></div></form><div class="panel"><h2>Embedding 與執行模式</h2><p id="embed-info"></p><p>如需公司 Embedding API，請在 config.json 設定 embedding.mode = api、網址、金鑰、模型和維度。更換模型必須建立新索引，啟動程式會阻止混用。</p><p class="muted">目前是單機展示用檔案儲存。尚未驗證一萬份文件、多人權限、正式備份遷移及跨主機部署。</p></div></section>
-<footer>myRAG / Windows demo <span>證據優先 · 推論需驗證</span></footer></main><script src="/demo/app.js?v=mode-buttons-1"></script></body></html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>myRAG · 研究工作區</title>
+    <link rel="stylesheet" href="/demo/style.css?v=workspace-2" />
+  </head>
+  <body class="workspace">
+    <svg
+      class="icon-defs"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="i-chat" viewBox="0 0 24 24">
+          <path
+            d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 3V6a2 2 0 0 1 2-2Z"
+          />
+          <path d="M8 9h8M8 13h5" />
+        </symbol>
+        <symbol id="i-files" viewBox="0 0 24 24">
+          <path d="M4 5h6l2 3h8v12H4zM4 5V3h8l2 3h6" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="M12 19V5m-6 6 6-6 6 6" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+          <path
+            d="M12 5v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2z"
+          />
+        </symbol>
+        <symbol id="i-external" viewBox="0 0 24 24">
+          <path d="M14 4h6v6m0-6L10 14M9 4H4v16h16v-5" />
+        </symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24">
+          <path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10" cy="10" r="6" />
+          <path d="m15 15 6 6" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </symbol>
+        <symbol id="i-doc" viewBox="0 0 24 24">
+          <path d="M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6" />
+        </symbol>
+        <symbol id="i-nodes" viewBox="0 0 24 24">
+          <circle cx="5" cy="6" r="2" />
+          <circle cx="19" cy="5" r="2" />
+          <circle cx="12" cy="19" r="2" />
+          <path d="m7 6 10-1M6 8l5 9M18 7l-5 10" />
+        </symbol>
+      </defs>
+    </svg>
+    <a class="skip-link" href="#query">跳至提問</a>
+    <aside class="sidebar" aria-label="主要導覽">
+      <a class="brand" href="/demo/" aria-label="myRAG 首頁"
+        ><span class="brand-mark"
+          ><svg class="icon"><use href="#i-nodes" /></svg></span
+        >myRAG<span class="brand-label">研究工作區</span></a
+      >
+      <button class="new-chat" id="new-chat" aria-label="開啟新對話">
+        <svg class="icon"><use href="#i-plus" /></svg><span>開啟新對話</span>
+      </button>
+      <div class="nav-label">工作區</div>
+      <nav>
+        <button
+          class="nav active"
+          data-tab="search"
+          aria-current="page"
+          aria-label="研究對話"
+        >
+          <svg class="icon"><use href="#i-chat" /></svg
+          ><span>研究對話</span></button
+        ><button class="nav" data-tab="files" aria-label="文件資料庫">
+          <svg class="icon"><use href="#i-files" /></svg><span>文件資料庫</span
+          ><span class="nav-count" id="source-count">—</span></button
+        ><button class="nav" data-tab="settings" aria-label="模型設定">
+          <svg class="icon"><use href="#i-settings" /></svg
+          ><span>模型設定</span>
+        </button>
+      </nav>
+      <div class="history-section">
+        <div class="nav-label">本次開啟的對話</div>
+        <div id="conversation-list">
+          <p class="history-empty">從一個研究問題開始</p>
+        </div>
+        <p class="session-note">對話僅保留於此分頁，重新整理即清除。</p>
+      </div>
+      <div class="sidebar-bottom">
+        <a href="/webui/" target="_blank" rel="noopener"
+          ><svg class="icon"><use href="#i-nodes" /></svg>知識圖譜與進階管理<svg
+            class="icon small"
+          >
+            <use href="#i-external" /></svg></a
+        ><a href="/docs" target="_blank" rel="noopener"
+          ><svg class="icon"><use href="#i-book" /></svg>API 文件<svg
+            class="icon small"
+          >
+            <use href="#i-external" /></svg
+        ></a>
+        <div class="connection">
+          <span class="status-dot" id="connection-dot"></span
+          ><span id="connection">正在連線</span
+          ><span class="local-tag">LOCAL</span>
+        </div>
+      </div>
+    </aside>
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="breadcrumb">
+          工作區<span>/</span><strong id="page-title">研究對話</strong>
+        </div>
+        <div class="topbar-actions">
+          <span class="model-pill" id="model-state">檢查服務中</span
+          ><button
+            class="evidence-toggle"
+            id="evidence-toggle"
+            aria-controls="evidence-panel"
+            aria-expanded="true"
+          >
+            <svg class="icon"><use href="#i-book" /></svg>研究證據<span
+              id="evidence-count"
+              >0</span
+            >
+          </button>
+        </div>
+      </header>
+      <section id="search" class="tab research-layout">
+        <div class="conversation-area">
+          <div class="conversation-scroll" id="conversation-scroll">
+            <div class="welcome" id="welcome">
+              <div class="welcome-kicker">
+                <span class="tiny-line"></span>從問題出發，回到證據
+              </div>
+              <h1>下一個研究發現，<br />從這裡開始。</h1>
+              <p class="welcome-description">
+                問一個問題，把散落在報告裡的經驗連起來。<br />探索做過的實驗、比較結果，找到下一步的方向。
+              </p>
+              <div class="prompt-grid">
+                <button
+                  class="prompt-card"
+                  data-query="有哪些降低電池溫升的實驗？請整理方法、條件與結果。"
+                >
+                  <span class="prompt-icon"
+                    ><svg class="icon"><use href="#i-search" /></svg></span
+                  ><strong>找研究線索</strong
+                  ><span>有沒有人做過類似的實驗？</span
+                  ><b aria-hidden="true">↗</b>
+                </button>
+                <button
+                  class="prompt-card"
+                  data-query="比較陶瓷塗層與石墨散熱片的效果、實驗條件與限制。"
+                >
+                  <span class="prompt-icon sand"
+                    ><svg class="icon"><use href="#i-files" /></svg></span
+                  ><strong>比較實驗</strong
+                  ><span>不同方法的結果與限制是什麼？</span
+                  ><b aria-hidden="true">↗</b>
+                </button>
+                <button
+                  class="prompt-card"
+                  data-query="更換黏著劑可能影響哪些結果？請區分已有證據與待驗證推論。"
+                >
+                  <span class="prompt-icon lilac"
+                    ><svg class="icon"><use href="#i-nodes" /></svg></span
+                  ><strong>評估變更影響</strong
+                  ><span>改了這個條件，還要留意什麼？</span
+                  ><b aria-hidden="true">↗</b>
+                </button>
+                <button
+                  class="prompt-card"
+                  data-query="新進研發人員應如何確認實驗條件及單位？請引用相關文件。"
+                >
+                  <span class="prompt-icon blue"
+                    ><svg class="icon"><use href="#i-book" /></svg></span
+                  ><strong>快速掌握背景</strong
+                  ><span>從既有報告，建立研究的起點。</span
+                  ><b aria-hidden="true">↗</b>
+                </button>
+              </div>
+              <p class="welcome-footnote">
+                以上問題以隨附的合成範例為例，可改成你的研究主題。
+              </p>
+            </div>
+            <div id="messages" aria-label="對話紀錄"></div>
+          </div>
+          <div class="composer-wrap">
+            <div id="mode-notice" class="mode-notice" hidden></div>
+            <form id="question-form" class="composer">
+              <label class="sr-only" for="query">研究問題</label
+              ><textarea
+                id="query"
+                rows="2"
+                maxlength="5000"
+                placeholder="描述你想了解的研究、實驗或問題…"
+              ></textarea>
+              <div class="composer-toolbar">
+                <div class="response-modes" role="group" aria-label="回覆方式">
+                  <button
+                    type="button"
+                    id="answer-mode"
+                    class="response-mode active"
+                    data-intent="answer"
+                    aria-pressed="true"
+                  >
+                    研究問答</button
+                  ><button
+                    type="button"
+                    class="response-mode"
+                    data-intent="search"
+                    aria-pressed="false"
+                  >
+                    只找證據
+                  </button>
+                </div>
+                <div class="composer-tools">
+                  <details id="retrieval-options" class="retrieval-options">
+                    <summary>
+                      <svg class="icon"><use href="#i-settings" /></svg
+                      ><span id="retrieval-label">語意搜尋</span>
+                    </summary>
+                    <div class="retrieval-menu">
+                      <strong>證據檢索方式</strong
+                      ><button
+                        type="button"
+                        data-mode="naive"
+                        aria-label="語意搜尋"
+                        class="mode-choice active"
+                        aria-pressed="true"
+                      >
+                        語意搜尋<span>依問題意思找相關片段</span></button
+                      ><button
+                        type="button"
+                        data-mode="mix"
+                        aria-label="圖譜＋向量"
+                        class="mode-choice"
+                        aria-pressed="false"
+                      >
+                        圖譜＋向量<span
+                          >結合關係與文件內容，需 LLM 與圖譜</span
+                        ></button
+                      ><button
+                        type="button"
+                        data-mode="global"
+                        aria-label="圖譜全域"
+                        class="mode-choice"
+                        aria-pressed="false"
+                      >
+                        圖譜全域<span>探索跨文件主題，需 LLM 與圖譜</span>
+                      </button>
+                      <p id="graph-hint"></p>
+                    </div>
+                  </details>
+                  <button
+                    id="send"
+                    class="send-button"
+                    type="submit"
+                    aria-label="送出問題"
+                  >
+                    <svg class="icon"><use href="#i-arrow" /></svg>
+                  </button>
+                </div>
+              </div>
+            </form>
+            <div class="composer-caption">
+              <span id="composer-hint">回答附上來源，研究推論仍需核對。</span
+              ><span>Enter 送出 · Shift + Enter 換行</span>
+            </div>
+            <div
+              id="message"
+              role="status"
+              aria-live="polite"
+              class="inline-message"
+            ></div>
+          </div>
+        </div>
+        <aside id="evidence-panel" class="evidence-panel" aria-label="研究證據">
+          <div class="evidence-header">
+            <div>
+              <span class="overline">回到原始資料</span>
+              <h2>研究證據 <span id="panel-count">0</span></h2>
+            </div>
+            <button
+              class="icon-button"
+              id="close-evidence"
+              aria-label="收起研究證據"
+            >
+              <svg class="icon"><use href="#i-close" /></svg>
+            </button>
+          </div>
+          <p id="evidence-context" class="evidence-context">
+            回答與檢索結果的來源會顯示在這裡。
+          </p>
+          <div id="evidence-list" class="evidence-list">
+            <div class="evidence-empty">
+              <div class="paper-stack" aria-hidden="true">
+                <div></div>
+                <div></div>
+                <div>
+                  <svg class="icon"><use href="#i-doc" /></svg><i></i><i></i
+                  ><i></i>
+                </div>
+              </div>
+              <h3>每個發現，都有出處。</h3>
+              <p>提問後，在這裡查看證據片段、<br />來源位置與文件原圖。</p>
+              <div class="evidence-legend">
+                <span>01　查看相關片段</span><span>02　核對圖片與條件</span
+                ><span>03　開啟原始文件</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+      <section id="files" class="tab content-page" hidden>
+        <div class="page-heading">
+          <div>
+            <span class="overline">KNOWLEDGE LIBRARY</span>
+            <h1>讓團隊的研究，持續累積。</h1>
+            <p>集中管理報告與實驗資料，為每次提問準備好證據。</p>
+          </div>
+          <button id="refresh" class="secondary">重新整理</button>
+        </div>
+        <div class="library-stats">
+          <div><span>全部文件</span><strong id="stat-total">—</strong></div>
+          <div>
+            <span><i class="dot green"></i>可供搜尋</span
+            ><strong id="stat-ready">—</strong>
+          </div>
+          <div>
+            <span><i class="dot amber"></i>正在處理</span
+            ><strong id="stat-processing">—</strong>
+          </div>
+          <div>
+            <span><i class="dot red"></i>需要留意</span
+            ><strong id="stat-attention">—</strong>
+          </div>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <span class="upload-symbol"
+            ><svg class="icon"><use href="#i-upload" /></svg
+          ></span>
+          <div>
+            <h2>把研究文件放進來</h2>
+            <p>拖曳檔案到這裡，或選擇多份文件。每份上限 30 MB。</p>
+            <span>PDF、PPTX、DOCX、XLSX、TXT、MD、PNG、JPG</span>
+          </div>
+          <label class="button primary file-picker" for="upload"
+            >選擇文件<input
+              type="file"
+              id="upload"
+              multiple
+              accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.png,.jpg,.jpeg"
+          /></label>
+        </div>
+        <div id="upload-queue" class="upload-queue" hidden></div>
+        <div
+          id="upload-message"
+          role="status"
+          aria-live="polite"
+          class="inline-message"
+        ></div>
+        <div class="library-toolbar">
+          <h2>文件清單 <span id="file-count"></span></h2>
+          <div class="library-controls">
+            <label class="filter-input"
+              ><svg class="icon"><use href="#i-search" /></svg
+              ><input
+                id="file-search"
+                type="search"
+                placeholder="搜尋檔名"
+                aria-label="搜尋檔名" /></label
+            ><select id="file-filter" aria-label="篩選文件狀態">
+              <option value="all">所有狀態</option>
+              <option value="ready">可供搜尋</option>
+              <option value="processing">正在處理</option>
+              <option value="attention">需要留意</option>
+            </select>
+          </div>
+        </div>
+        <div id="file-list" class="file-list"></div>
+        <p class="library-note">
+          圖片文字由 CPU OCR 辨識；圖表理解需要多模態 LLM。PPT
+          講者備註不會匯入，舊版 Office 格式請先另存新格式。
+        </p>
+      </section>
+      <section id="settings" class="tab content-page" hidden>
+        <div class="page-heading">
+          <div>
+            <span class="overline">WORKSPACE SETTINGS</span>
+            <h1>連接你的研究助手。</h1>
+            <p>接上公司模型，即可根據知識庫回答問題與建立圖譜。</p>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <form id="settings-form" class="settings-card">
+            <div class="section-title">
+              <span class="step-number">01</span>
+              <div>
+                <h2>LLM 連線</h2>
+                <p>使用公司或供應商提供的 OpenAI 相容 API。</p>
+              </div>
+            </div>
+            <label for="base-url">API Base URL</label
+            ><input
+              id="base-url"
+              placeholder="https://your-server/v1"
+              type="url"
+            />
+            <p class="field-hint">
+              填寫 API 基底網址，不包含 /chat/completions。
+            </p>
+            <label for="model-name">Model name</label
+            ><input id="model-name" placeholder="公司提供的模型名稱" /><label
+              for="api-key"
+              >API key／存取密碼</label
+            ><input
+              id="api-key"
+              type="password"
+              autocomplete="off"
+              placeholder="留白保留原本的金鑰"
+            />
+            <p class="field-hint">僅儲存在本機，已儲存的金鑰不會回傳瀏覽器。</p>
+            <div class="graph-setting">
+              <div>
+                <h3>新文件建立知識圖譜</h3>
+                <p>由 LLM 抽取實體與關係，會增加處理時間及 API 用量。</p>
+              </div>
+              <label class="switch"
+                ><input id="graph" type="checkbox" /><span></span
+                ><b class="sr-only">啟用圖譜抽取</b></label
+              >
+            </div>
+            <p class="field-hint">既有文件不會自動補建圖譜，需要重建索引。</p>
+            <div class="settings-save">
+              <button id="save-settings" class="primary">儲存設定</button
+              ><span>儲存後需 Stop.cmd → Start.cmd 重啟</span>
+            </div>
+            <div
+              id="settings-message"
+              role="status"
+              aria-live="polite"
+              class="inline-message"
+            ></div>
+          </form>
+          <div class="settings-side">
+            <div class="settings-card">
+              <span class="overline">不接 LLM 也能開始</span>
+              <h2>本機語意搜尋已備妥</h2>
+              <p>
+                CPU Embedding 將文件轉成向量，讓你用自然語言找資料，不必另外申請
+                Embedding API。
+              </p>
+              <div class="embedding-detail" id="embed-info">載入中…</div>
+            </div>
+            <div class="settings-card subtle">
+              <h3>關於這個工作區</h3>
+              <p>
+                文件與索引保存在本機。此版本用於單機驗證，尚未提供多人權限管理。
+              </p>
+              <details>
+                <summary>進階 Embedding 設定</summary>
+                <p>
+                  若改用公司 Embedding API，請修改 config.json 的 embedding
+                  設定。不同模型不可混用向量，需重新建立索引。
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <dialog id="image-dialog">
+      <div class="image-dialog-header">
+        <span id="image-title">來源原圖</span
+        ><button class="icon-button" id="close-image" aria-label="關閉原圖">
+          <svg class="icon"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <img id="image-preview" alt="" />
+      <p>來源區段的原圖；請核對座標、單位與實驗條件。</p>
+    </dialog>
+    <script src="/demo/app.js?v=workspace-2"></script>
+  </body>
+</html>

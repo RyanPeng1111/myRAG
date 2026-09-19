@@ -8,6 +8,7 @@ import re
 import threading
 from urllib.parse import urlparse
 import uuid
+from typing import Literal
 
 import httpx
 from fastapi import File, HTTPException, Request, UploadFile
@@ -20,10 +21,16 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .parser import SUPPORTED, parse_document, enrich_ocr
 
 
+class ConversationMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=6000)
+
+
 class Search(BaseModel):
     query: str = Field(min_length=2, max_length=5000)
     limit: int = Field(default=6, ge=1, le=30)
     mode: str = "naive"
+    conversation_history: list[ConversationMessage] = Field(default_factory=list, max_length=6)
 
 
 class EmbeddingRequest(BaseModel):
@@ -181,6 +188,7 @@ def install(app, cfg, root: Path):
         result = await upstream("POST", "/query", json={"query": body.query, "mode": body.mode,
                                  "chunk_top_k": body.limit, "enable_rerank": False,
                                  "include_references": True, "include_chunk_content": True,
+                                 "conversation_history": [message.model_dump() for message in body.conversation_history],
                                  "user_prompt": "請用繁體中文。每個研究結論附來源，區分實驗證據、推論及資料缺口。勿把不同條件的結果當成公平比較。"})
         return enrich(result)
 
