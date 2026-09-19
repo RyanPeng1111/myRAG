@@ -2,11 +2,11 @@
 
 以 **LightRAG 1.5.7** 的伺服器、文件索引、向量檢索、圖譜引擎與管理 UI 為基底，增加 Windows 啟動流程、CPU Embedding/OCR、研究搜尋入口、Office 圖片及來源定位轉接。不是重寫 RAG 引擎。
 
-## 公司電腦：從 Git 重現（建議使用這個流程）
+## 公司電腦：下載 ZIP 後重現（建議使用這個流程）
 
-需求：Windows x64、Python 3.12 x64、可使用 Git。完整儲存庫包含約 440 MB 離線資源分片，不需要 Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
+需求：Windows x64、Python 3.12 x64。完整儲存庫包含約 440 MB 離線資源分片，GitHub 的 **Code → Download ZIP** 會一併包含這些檔案；公司電腦不需要 Git、Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
 
-1. 第一次在公司使用 `git clone <這個儲存庫的網址> myRAG`，進入資料夾；已經有 checkout 時才使用 `git pull`。
+1. 從 GitHub 的 **Code → Download ZIP** 取得整包，經公司掃描及核准流程帶入後，使用「解壓縮全部」解開至本機，例如 `D:\proj\myRAG`。進入實際包含 `Bootstrap.cmd` 的資料夾；不要直接在 ZIP 預覽裡執行。
 2. 雙擊 **Bootstrap.cmd**。它會驗證資源 SHA-256、解開模型與套件、建立 `.venv`，完全使用本地套件安裝，不連 PyPI 或 Hugging Face。
 3. 若 Python 沒有登錄 `py` launcher，在命令提示字元執行 `Bootstrap.cmd "C:\實際Python312路徑\python.exe"`。
 4. 雙擊 **Start.cmd**，保留服務視窗，開啟 **http://127.0.0.1:9621/demo/**。
@@ -15,7 +15,7 @@
 
 這是重現相同程式、模型與樣本的流程，不會攜帶開發者的 API key、LLM 快取或工作中的資料索引；LLM 回答與抽取結果不保證逐字相同。先在未設定 LLM 時載入樣本，可避免匯入時意外消耗外部 API 額度。公司不必申請 Embedding API。
 
-更新前先停止服務再 `git pull`，重跑 Bootstrap.cmd 更新套件；它會保留本機 config.json 與 data/。若公司掃描或終端防護拒絕套件，需要依公司流程處理，本流程不會跳過安全檢查。
+ZIP 更新方式：先停止服務，備份本機 `config.json` 與 `data/`，把新 ZIP 解壓到原本的專案資料夾並覆蓋程式檔，再重跑 Bootstrap.cmd。ZIP 不包含 config.json 與 data/，安裝程式也會保留它們；請不要刪除原本整個資料夾後再解壓。若偏好 Git，也可 clone／pull 後使用相同的三個 CMD 入口。若公司掃描或終端防護拒絕套件，需要依公司流程處理，本流程不會跳過安全檢查。
 
 ## 現在這台電腦怎麼用
 
