@@ -9,7 +9,7 @@ out = root / "dist"
 out.mkdir(exist_ok=True)
 top = ["run.py", "config.example.json", "requirements.in", "requirements-win-py312.lock",
        "Setup.ps1", "Start.ps1", "Start.cmd", "Stop.cmd", "Prepare.ps1", "Prepare-Offline.ps1",
-       "README.md", "VERIFICATION.md", ".gitignore", ".gitattributes", "Bootstrap.cmd", "Load-Samples.cmd", "THIRD_PARTY.md"]
+       "README.md", "ARCHITECTURE.md", "VERIFICATION.md", ".gitignore", ".gitattributes", "Bootstrap.cmd", "Load-Samples.cmd", "THIRD_PARTY.md"]
 code = [root / name for name in top]
 for directory in ("demo", "web", "tools", "tests", "samples", "offline", "licenses"):
     code.extend(p for p in (root / directory).rglob("*") if p.is_file()
