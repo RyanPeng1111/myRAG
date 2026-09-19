@@ -8,7 +8,8 @@ from fastapi.responses import Response
 
 
 def requests_per_minute(cfg):
-    default = 4 if urlparse(cfg['llm'].get('base_url', '')).hostname == 'generativelanguage.googleapis.com' else 0
+    host = urlparse(cfg['llm'].get('base_url', '')).hostname
+    default = {'generativelanguage.googleapis.com': 4, 'api.groq.com': 1}.get(host, 0)
     return max(0, int(cfg.get('llm_requests_per_minute', default)))
 
 

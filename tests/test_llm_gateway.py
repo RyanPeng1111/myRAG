@@ -24,6 +24,7 @@ class RateLimitTests(unittest.IsolatedAsyncioTestCase):
     async def test_only_google_defaults_to_pacing(self):
         self.assertEqual(requests_per_minute({'llm': {'base_url': 'https://generativelanguage.googleapis.com/v1beta/openai'}}), 4)
         self.assertEqual(requests_per_minute({'llm': {'base_url': 'https://internal.example/v1'}}), 0)
+        self.assertEqual(requests_per_minute({'llm': {'base_url': 'https://api.groq.com/openai/v1'}}), 1)
 
 
 class DailyQuotaTests(unittest.TestCase):

@@ -89,6 +89,8 @@ Gemini 低額度保護：當 LLM 網址是 `generativelanguage.googleapis.com`�
 
 若供應商回報 `PerDay` 每日額度耗盡，節流轉接會在本次服務執行期間記住該錯誤，不再反覆向外送出 LLM 請求。待供應商額度恢復後需重啟服務再重試。向量搜尋不受此限制。
 
+Groq 免費額度保護：`api.groq.com` 預設每分鐘 1 次、同時 1 次請求。原因是建圖提示詞較長，實測單次約需 6,000 tokens，而帳號限制為每分鐘 8,000 tokens；只限制請求次數為每分鐘 30 次並不足夠。此保守節流不是精確 token 配額管理，單次超過可用 token 上限、每日用量或其他程式共用額度仍可能失敗。
+
 公司提供 Embedding 時，修改 `config.json` 的 `embedding`：
 
 ```json
