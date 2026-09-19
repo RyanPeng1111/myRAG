@@ -180,7 +180,7 @@ def install(app, cfg, root: Path):
     @app.post("/demo/ask")
     async def ask(body: Search):
         if not llm_ready:
-            raise HTTPException(409, "尚未設定公司 LLM。請先使用搜尋，或設定模型後重啟。")
+            raise HTTPException(409, "尚未設定 LLM。請先使用搜尋，或設定模型後重啟。")
         if body.mode not in ("naive", "mix", "local", "global", "hybrid"):
             raise HTTPException(400, "Unknown retrieval mode")
         if body.mode != "naive" and not cfg["graph_enabled"]:

@@ -397,7 +397,7 @@
           <div>
             <span class="overline">WORKSPACE SETTINGS</span>
             <h1>連接你的研究助手。</h1>
-            <p>接上公司模型，即可根據知識庫回答問題與建立圖譜。</p>
+            <p>接上模型 API，即可根據知識庫回答問題與建立圖譜。</p>
           </div>
         </div>
         <div class="settings-grid">
@@ -406,7 +406,7 @@
               <span class="step-number">01</span>
               <div>
                 <h2>LLM 連線</h2>
-                <p>使用公司或供應商提供的 OpenAI 相容 API。</p>
+                <p>使用模型服務提供的 OpenAI 相容 API。</p>
               </div>
             </div>
             <label for="base-url">API Base URL</label
@@ -419,7 +419,7 @@
               填寫 API 基底網址，不包含 /chat/completions。
             </p>
             <label for="model-name">Model name</label
-            ><input id="model-name" placeholder="公司提供的模型名稱" /><label
+            ><input id="model-name" placeholder="API 提供的模型名稱" /><label
               for="api-key"
               >API key／存取密碼</label
             ><input
@@ -469,7 +469,7 @@
               <details>
                 <summary>進階 Embedding 設定</summary>
                 <p>
-                  若改用公司 Embedding API，請修改 config.json 的 embedding
+                  若改用外部 Embedding API，請修改 config.json 的 embedding
                   設定。不同模型不可混用向量，需重新建立索引。
                 </p>
               </details>

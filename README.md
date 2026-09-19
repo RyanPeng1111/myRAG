@@ -15,30 +15,30 @@
 
 REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 陣列（最多 6 則 `user`／`assistant` 訊息，每則包含 `role`、`content`），原有呼叫方式仍可使用。
 
-## 公司電腦：下載 ZIP 後重現（建議使用這個流程）
+## 快速開始：下載 ZIP 安裝
 
 公開儲存庫：[RyanPeng1111/myRAG](https://github.com/RyanPeng1111/myRAG)；使用 `main` 分支的 [完整 ZIP](https://github.com/RyanPeng1111/myRAG/archive/refs/heads/main.zip)。
 
-需求：Windows x64、Python 3.12 x64。完整儲存庫包含約 440 MB 離線資源分片，GitHub 的 **Code → Download ZIP** 會一併包含這些檔案；公司電腦不需要 Git、Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
+需求：Windows x64、Python 3.12 x64。完整儲存庫包含約 440 MB 離線資源分片，GitHub 的 **Code → Download ZIP** 會一併包含這些檔案；安裝不需要 Git、Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
 
-1. 從 GitHub 的 **Code → Download ZIP** 取得整包，經公司掃描及核准流程帶入後，使用「解壓縮全部」解開至本機，例如 `D:\proj\myRAG`。進入實際包含 `Bootstrap.cmd` 的資料夾；不要直接在 ZIP 預覽裡執行。
+1. 從 GitHub 的 **Code → Download ZIP** 取得整包，使用「解壓縮全部」解開至自選的專案資料夾。進入實際包含 `Bootstrap.cmd` 的資料夾；不要直接在 ZIP 預覽裡執行。
 2. 雙擊 **Bootstrap.cmd**。它會驗證資源 SHA-256、解開模型與套件、建立 `.venv`，完全使用本地套件安裝，不連 PyPI 或 Hugging Face。
-3. 若 Python 沒有登錄 `py` launcher，在命令提示字元執行 `Bootstrap.cmd "C:\實際Python312路徑\python.exe"`。
+3. 若 Python 沒有登錄 `py` launcher，在命令提示字元執行 `Bootstrap.cmd "<Python312安裝目錄>\python.exe"`。
 4. 雙擊 **Start.cmd**，保留服務視窗，開啟 **http://127.0.0.1:9621/demo/**。
 5. 另雙擊 **Load-Samples.cmd** 匯入合成範例；等文件頁顯示「可供搜尋」後，即可測試向量搜尋、OCR 與來源圖片。
-6. 在「模型設定」填入公司 LLM 網址、API key、model name。儲存後用 Stop.cmd、Start.cmd 重啟，即可測試 RAG 問答。要建圖，開啟圖譜並對選定文件重建索引。
+6. 在「模型設定」填入自訂 LLM 網址、API key、model name。儲存後用 Stop.cmd、Start.cmd 重啟，即可測試 RAG 問答。要建圖，開啟圖譜並對選定文件重建索引。
 
-這是重現相同程式、模型與樣本的流程，不會攜帶開發者的 API key、LLM 快取或工作中的資料索引；LLM 回答與抽取結果不保證逐字相同。先在未設定 LLM 時載入樣本，可避免匯入時意外消耗外部 API 額度。公司不必申請 Embedding API。
+這是重現相同程式、模型與樣本的流程，不會攜帶開發者的 API key、LLM 快取或工作中的資料索引；LLM 回答與抽取結果不保證逐字相同。先在未設定 LLM 時載入樣本，可避免匯入時意外消耗外部 API 額度。使用本機 Embedding 時不需要額外 API。
 
-若公司掃描或終端防護拒絕套件，需要依公司流程處理，本流程不會跳過安全檢查。
+若套件遭安全掃描或終端防護攔截，請依部署環境的管理政策處理。
 
 ## 已安裝版本如何更新（ZIP）
 
 1. 等目前的文件匯入與索引處理完成，再執行 **Stop.cmd**，確認服務已結束。
-2. 備份目前的 **config.json** 與整個 **data/** 資料夾，並保留舊版程式 ZIP。若有調整 ca_bundle 指向公司憑證檔，也保留該檔案及路徑。
+2. 備份目前的 **config.json** 與整個 **data/** 資料夾，並保留舊版程式 ZIP。若有調整 ca_bundle 指向自訂憑證檔，也保留該檔案及路徑。
 3. 下載並掃描最新的 **main ZIP**。先解壓到暫存資料夾，找到裡面實際含有 `Bootstrap.cmd` 的目錄。
 4. 把該目錄的內容複製到原本專案資料夾，覆蓋同名程式檔；不要把 `myRAG-main` 整層塞進原目錄，也不要刪除原本整個專案資料夾。ZIP 不含 config.json、data/ 或 .venv/。
-5. 執行 **Bootstrap.cmd**。既有設定與資料會保留；本次 UI 改版沒有新增套件，但重跑可檢查環境。若找不到 Python 3.12，改用 `Bootstrap.cmd "C:\實際Python312路徑\python.exe"`；可先執行 `py -0p` 查看啟動器認得的版本。
+5. 執行 **Bootstrap.cmd**。既有設定與資料會保留；本次 UI 改版沒有新增套件，但重跑可檢查環境。若找不到 Python 3.12，改用 `Bootstrap.cmd "<Python312安裝目錄>\python.exe"`；可先執行 `py -0p` 查看啟動器認得的版本。
 6. 執行 **Start.cmd**，開啟 `http://127.0.0.1:9621/demo/`，按 **Ctrl + F5** 更新瀏覽器快取。確認文件清單、搜尋與模型設定正常；已匯入資料不需要再執行 Load-Samples.cmd。
 
 本次更新必須重啟 Python 服務，才能啟用新增的對話上下文 API。若要回復舊版，先停止服務，在另一個乾淨資料夾解壓舊版 ZIP、執行 Bootstrap.cmd，再還原更新前備份的 config.json 與 data/；不要讓兩份程式同時使用同一資料目錄或連接埠。
@@ -47,15 +47,15 @@ REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 
 
 維護原則：往後每次合併 main，若有功能、安裝、設定、API 或資料格式變動，必須同步更新本 README，說明升級步驟、是否需要重建索引及回復方式。未來共用服務的選型與演進方向見 [ARCHITECTURE.md](ARCHITECTURE.md)；該文件是規劃，並非目前已接通的服務。
 
-## 現在這台電腦怎麼用
+## 啟動與日常使用
 
-專案位於 `D:\proj\myRAG`。如果服務仍運作，開啟：
+在專案資料夾執行 Start.cmd，服務啟動後開啟：
 
 **http://127.0.0.1:9621/demo/**
 
 若服務已停止，雙擊 **Start.cmd**。資料會保留，停止時在服務視窗按 Ctrl+C。不要啟動多個相同資料目錄的服務。Start.cmd 不會調整 PowerShell 執行政策或防火牆。
 
-也可雙擊 **Stop.cmd** 要求服務完成目前請求並保存索引後關閉，適用於這次預先啟動的背景服務。儲存模型設定後，先 Stop.cmd，再 Start.cmd。正在匯入大型文件時請等候關閉完成。
+也可雙擊 **Stop.cmd** 要求服務完成目前請求並保存索引後關閉，也適用於背景啟動的服務。儲存模型設定後，先 Stop.cmd，再 Start.cmd。正在匯入大型文件時請等候關閉完成。
 
 可先問：
 
@@ -78,8 +78,8 @@ REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 
 | 圖片文字 | CPU RapidOCR，結果保留辨識標記，須核對原圖 |
 | 圖片來源 | PPT/Word/PDF 嵌入圖片的 PNG 預覽＋原檔下載 |
 | 來源位置 | PDF 頁碼、PPT 投影片、Excel 工作表/列/儲存格；Word 僅全文 |
-| 公司 LLM、視覺問答、圖譜抽取 | 接口已接線，尚無公司端點，效果未驗證 |
-| 公司 Embedding API | OpenAI 相容模式可設定，尚未在公司實測 |
+| 自訂 LLM、視覺問答、圖譜抽取 | 接口已接線；各部署環境的端點與效果需另行驗證 |
+| 自訂 Embedding API | OpenAI 相容模式可設定，各部署環境需另行驗證 |
 | MinIO、Oracle、PostgreSQL | 本 demo 不需要，尚未整合 |
 | 一萬份文件 / 多人權限 / 正式維運 | 尚未驗證；本地檔案儲存只供單機 demo |
 
@@ -87,26 +87,26 @@ REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 
 
 ## 現在與未來企業共用版的架構
 
-建議演進方向是 **Python / FastAPI + LightRAG + MinIO + PostgreSQL（含 pgvector）+ 公司 LLM API**，共用階段再部署到既有 K8s。以下「未來建議」尚未實作；目前下載 ZIP 仍只需要 Windows、Python 3.12 與 CPU，不用先申請這些服務。
+建議演進方向是 **Python / FastAPI + LightRAG + MinIO + PostgreSQL（含 pgvector）+ 自訂 LLM API**，共用階段可部署到 K8s。以下「未來建議」尚未實作；目前下載 ZIP 仍只需要 Windows、Python 3.12 與 CPU，不用先申請這些服務。
 
 | 用途 | 現在本機版 | 未來建議 |
 |---|---|---|
 | UI、REST API、RAG 引擎 | Python、FastAPI、LightRAG | 保留並延伸 |
-| 文件原檔、圖片、解析產物 | 本機資料夾 | 公司既有 MinIO / S3 |
+| 文件原檔、圖片、解析產物 | 本機資料夾 | MinIO / S3 |
 | 文件目錄、版本、權限、對話 | 目錄與狀態用 JSON；對話在分頁記憶體；尚無完整版本與權限管理 | PostgreSQL 應用資料表 |
 | 向量索引 | NanoVectorDB | PostgreSQL + pgvector（PGVectorStorage） |
 | 知識圖譜 | NetworkX | PostgreSQL 一般資料表（PGTableGraphStorage） |
 | LightRAG 文字片段、快取、文件狀態 | 本機 JSON | PGKVStorage、PGDocStatusStorage |
 | 文件解析、建索引 | 與 API 同一服務內處理 | 獨立背景 worker，初期單一索引寫入者 |
-| Embedding | CPU 本機模型，也可設定 API | 先沿用，有合適的公司 API 再評估切換 |
-| LLM | 設定的 OpenAI 相容 API | 公司 LLM API |
+| Embedding | CPU 本機模型，也可設定 API | 先沿用，有合適的 API 再評估切換 |
+| LLM | 設定的 OpenAI 相容 API | 自訂 LLM API |
 | 部署 | Windows 本機、單一服務程序 | 企業共用階段再上 K8s |
 
 ### 為什麼選這些技術？
 
-沿用現有 MinIO 保存原檔與圖片，讓 PostgreSQL 集中處理結構化資料、向量與圖譜，可減少需要維運的產品。LightRAG 已提供上述 PostgreSQL 儲存介面，PGTableGraphStorage 不要求 Neo4j 或 Apache AGE；但本專案仍需完成儲存轉接、資料搬遷與整合驗證，不能只換設定就視為可正式上線。[LightRAG 官方儲存文件](https://github.com/HKUDS/LightRAG/blob/main/docs/LightRAG-API-Server.md)
+使用 MinIO 保存原檔與圖片，讓 PostgreSQL 集中處理結構化資料、向量與圖譜，可減少需要維運的產品。LightRAG 已提供上述 PostgreSQL 儲存介面，PGTableGraphStorage 不要求 Neo4j 或 Apache AGE；但本專案仍需完成儲存轉接、資料搬遷與整合驗證，不能只換設定就視為可正式上線。[LightRAG 官方儲存文件](https://github.com/HKUDS/LightRAG/blob/main/docs/LightRAG-API-Server.md)
 
-PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已有 Oracle，目前鎖定的 LightRAG 版本沒有註冊 Oracle 後端；直接選它需要自行維護轉接。若公司政策只允許 Oracle，再確認版本、向量功能及開發成本。詳細取捨與官方來源見 [ARCHITECTURE.md](ARCHITECTURE.md)。
+PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。目前鎖定的 LightRAG 版本沒有註冊 Oracle 後端；直接選它需要自行維護轉接。若部署政策只允許 Oracle，再確認版本、向量功能及開發成本。詳細取捨與官方來源見 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 初期不增加 Redis、Elasticsearch、Neo4j 或 Milvus。任務可先以 PostgreSQL 任務表管理；待實際出現吞吐、精確搜尋、複雜圖譜查詢或向量效能瓶頸，再加入相應服務。任務表與 worker 的可靠領取、失敗重試及當機恢復都屬於後續開發，並非目前已有功能。
 
@@ -138,15 +138,15 @@ PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已�
 
 ### 建議落地順序
 
-1. **本機品質驗證**：先用公司真實文件確認搜尋命中、表格與圖片解析、引用位置及 LLM 用量。
-2. **小範圍共用**：接 MinIO、PostgreSQL、背景任務與公司登入／文件權限；補上備份還原、刪除傳播及稽核。權限需涵蓋檢索、圖譜、原檔、圖片與快取。
+1. **本機品質驗證**：先用具代表性的實際文件確認搜尋命中、表格與圖片解析、引用位置及 LLM 用量。
+2. **小範圍共用**：接 MinIO、PostgreSQL、背景任務與身分驗證／文件權限；補上備份還原、刪除傳播及稽核。權限需涵蓋檢索、圖譜、原檔、圖片與快取。
 3. **依負載擴充**：觀察分片數、圖譜規模、同時查詢人數、索引等待時間和查詢延遲，再決定增加 worker 或專用服務。不能只用「一萬份文件」決定架構。
 
-換儲存後端需規劃搬遷與重建；換 Embedding 模型需重建向量。未來 K8s 若使用 Linux，須另外準備公司核准的 Linux 套件與 image，不能直接使用目前 Windows wheelhouse。完整規劃見 [ARCHITECTURE.md](ARCHITECTURE.md)。
+換儲存後端需規劃搬遷與重建；換 Embedding 模型需重建向量。未來 K8s 若使用 Linux，須另外準備部署環境核准的 Linux 套件與 image，不能直接使用目前 Windows wheelhouse。完整規劃見 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
-## 第一次安裝 / 帶入公司
+## 手動安裝與離線資源準備
 
-需要 **Windows x64、Python 3.12 x64**。已驗證的本機 Python 為 3.12.14；不直接使用本機其他專案的 Python 3.14。獨立 `.venv` 不修改全域套件。
+需要 **Windows x64、Python 3.12 x64**。驗證版本為 Python 3.12.14。獨立 `.venv` 不修改全域套件。
 
 有可用的套件來源時，在專案目錄執行：
 
@@ -159,7 +159,7 @@ PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已�
 若 Python 不在 `py` launcher 裡：
 
 ```powershell
-.\Setup.ps1 -Python 'D:\Python312\python.exe'
+.\Setup.ps1 -Python '<Python312安裝目錄>\python.exe'
 ```
 
 `Prepare.ps1` 是明確的連外準備階段，下載本機 Embedding 與 tokenizer；啟動階段使用本地模型，不臨時下載。OCR 模型包含於套件 wheel 中。企業 CA 可設定 `config.json` 的 `ca_bundle`，不關閉 TLS 驗證。
@@ -170,14 +170,14 @@ PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已�
 .\Prepare-Offline.ps1
 ```
 
-帶入以下項目：程式碼、`requirements-win-py312.lock`、`wheelhouse/`、`models/`、`.cache/tiktoken/`，以及公司核准的 Python 3.12 x64 安裝資源。在內網執行：
+離線安裝需準備以下項目：程式碼、`requirements-win-py312.lock`、`wheelhouse/`、`models/`、`.cache/tiktoken/`，以及 Python 3.12 x64 安裝資源。在目標環境執行：
 
 ```powershell
-.\Setup.ps1 -Offline -Python 'D:\Python312\python.exe'
+.\Setup.ps1 -Offline -Python '<Python312安裝目錄>\python.exe'
 .\Start.ps1
 ```
 
-不要複製 `.venv` 當作可攜環境，也不要把你個人的 `config.json` 或真實公司資料提交 GitHub。Nexus 可透過標準 pip 設定指定，公司認證資訊不要寫在專案裡。
+不要複製 `.venv` 當作可攜環境，也不要把含憑證的 `config.json` 或使用者資料提交 GitHub。Nexus 可透過標準 pip 設定指定，套件來源的認證資訊不要寫在專案裡。
 
 `dist/myRAG-source.zip` 現在包含程式碼與 `offline/` 分片，可解壓後直接使用 Bootstrap.cmd。`dist/myRAG-offline-resources.zip` 是同一批套件與模型的獨立資源包，供替代安裝流程使用，不必兩包都下載。`dist/manifest.json` 提供 SHA-256。這些包不含密鑰、使用者文件或 Python 安裝程式。可執行 `python tools/package.py` 重新打包；更新離線資源後，再執行 `python tools/split_resources.py` 更新 Git 分片。
 
@@ -187,7 +187,7 @@ PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已�
 
 預設 `graph_enabled=false`，文件只建向量。打開圖譜後，新匯入文件才會呼叫 LLM 抽取關係。既有文件不會自動補建圖譜：先在文件清單移除該文件索引，再重新匯入。圖譜關係是模型抽取結果，不是已證實的因果。
 
-Gemini 低額度保護：當 LLM 網址是 `generativelanguage.googleapis.com`，自動經由同一 Python 服務內的節流轉接，每分鐘最多約 4 次請求、同時 1 次。429／503 會使下一次請求至少延後 65 秒，再由上游重試機制重試。公司內網網址預設不啟用；可在 config.json 設定 `llm_requests_per_minute`（正整數，0 關閉）後重啟。此保護無法預知其他程式共用同一 Google 專案的用量，也不能解決每日額度用盡。啟用時串流回覆會先緩衝完整回應。
+Gemini 低額度保護：當 LLM 網址是 `generativelanguage.googleapis.com`，自動經由同一 Python 服務內的節流轉接，每分鐘最多約 4 次請求、同時 1 次。429／503 會使下一次請求至少延後 65 秒，再由上游重試機制重試。其他網址預設不啟用這項供應商專屬保護；可在 config.json 設定 `llm_requests_per_minute`（正整數，0 關閉）後重啟。此保護無法預知其他程式共用同一 Google 專案的用量，也不能解決每日額度用盡。啟用時串流回覆會先緩衝完整回應。
 
 若建圖遇到 API 限流失敗，原檔仍在，不必重新上傳。待額度恢復後可呼叫 `POST /documents/reprocess_failed`；它會重試所有失敗／待處理文件並保留追蹤 ID。建圖會比單純向量索引慢，建議先測一份小文件。
 
@@ -197,12 +197,12 @@ Groq 免費額度保護：`api.groq.com` 預設每分鐘 1 次、同時 1 次請
 
 Groq 的 `openai/gpt-oss-*` 模型若未指定相關參數，轉接預設 `reasoning_effort=low`、`max_completion_tokens=4096`，避免預設推理耗盡輸出額度卻沒有產生抽取文字；可用 config.json 的 `groq_reasoning_effort` 與 `groq_max_completion_tokens` 調整。
 
-公司提供 Embedding 時，修改 `config.json` 的 `embedding`：
+使用外部 Embedding API 時，修改 `config.json` 的 `embedding`：
 
 ```json
 {
   "mode": "api",
-  "base_url": "https://company-host/v1",
+  "base_url": "https://embedding.example.com/v1",
   "api_key": "YOUR_KEY",
   "model": "YOUR_EMBEDDING_MODEL",
   "dimension": 1024,
@@ -243,7 +243,7 @@ Invoke-RestMethod 'http://127.0.0.1:9621/demo/search' -Method Post -ContentType 
 
 備份前先停機，完整複製 `data/`，另備份設定及模型。還原使用相同套件鎖定版本與 Embedding 模型。不能在服務寫入時直接拷貝部分 JSON 檔作為可靠備份。
 
-此版只綁定 `127.0.0.1`，供本機瀏覽器與 Agent 使用。沒有實作企業使用者權限，不應直接改成對全公司公開。可用專案內的 `tools/doctor.py` 檢查環境。
+此版只綁定 `127.0.0.1`，供本機瀏覽器與 Agent 使用。沒有實作企業使用者權限，不應直接改成開放為多人共用服務。可用專案內的 `tools/doctor.py` 檢查環境。
 
 ## 驗證
 
@@ -258,7 +258,7 @@ Invoke-RestMethod 'http://127.0.0.1:9621/demo/search' -Method Post -ContentType 
 .\.venv\Scripts\python.exe tools\smoke.py
 ```
 
-smoke 會匯入一份明確標示的可丟棄測試文件，確認可搜尋後移除其索引；原檔仍保留。LLM 問答、公司 API、真實研究效果與 GraphRAG 品質未由這些測試證明。
+smoke 會匯入一份明確標示的可丟棄測試文件，確認可搜尋後移除其索引；原檔仍保留。LLM 問答、自訂 API、實際研究效果與 GraphRAG 品質未由這些測試證明。
 
 ## 上游與延伸範圍
 
@@ -268,4 +268,4 @@ smoke 會匯入一份明確標示的可丟棄測試文件，確認可搜尋後�
 - RapidOCR：https://github.com/RapidAI/RapidOCR ，使用 `rapidocr-onnxruntime==1.4.4`。
 - 自有程式位於 `demo/`、`web/`、`tools/` 與啟動腳本；未修改上游核心。`vendor/LightRAG` 僅供原始碼檢視，不是執行依賴。
 
-帶入企業的資源仍需遵循公司的套件、模型與授權審查。本專案不要求跳過掃描或解除公司安全設定。
+部署時須遵循適用的套件、模型與授權審查，以及環境安全政策。
