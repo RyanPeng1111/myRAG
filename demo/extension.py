@@ -199,7 +199,10 @@ def install(app, cfg, root: Path):
                     elif "failed" in states:
                         summary["state"] = "failed"
                         error_text = ' '.join(str(d.get('error_msg', '')) for d in docs if d.get('status') == 'failed')
-                        if any(s in error_text for s in ('429', 'RateLimitError', 'RESOURCE_EXHAUSTED')):
+                        if all(d.get('status') == 'failed' and 'Identical content already exists' in str(d.get('error_msg', '')) for d in docs):
+                            summary['state'] = 'duplicate-content'
+                            summary['warnings'] = [*(summary.get('warnings') or []), '內容與另一筆文件相同，未另建索引；請查看原始那筆文件的處理狀態。']
+                        elif any(s in error_text for s in ('429', 'RateLimitError', 'RESOURCE_EXHAUSTED')):
                             summary['warnings'] = [*(summary.get('warnings') or []), 'LLM 請求額度或頻率受限，原檔仍保留；請等候額度恢復後重試建索引。']
                         elif any(s in error_text for s in ('503', 'UNAVAILABLE')):
                             summary['warnings'] = [*(summary.get('warnings') or []), 'LLM 服務暫時忙碌，原檔仍保留；請稍後重試建索引。']
@@ -265,6 +268,8 @@ def install(app, cfg, root: Path):
                     docs = await tracked_docs(old)
                     if docs and all(d["status"] != "failed" for d in docs):
                         return {"id": old["id"], "name": old["name"], "state": "already-imported", "tracks": old["tracks"], "warnings": ["相同內容已匯入，未重複建立索引。"]}
+                    if docs and any(d['status'] == 'failed' for d in docs):
+                        raise HTTPException(409, '相同內容已有失敗紀錄，請重試原紀錄，或先移除原紀錄的索引再匯入；不需要重複上傳。')
             doc_id = uuid.uuid4().hex
             folder = sources / doc_id
             folder.mkdir()
