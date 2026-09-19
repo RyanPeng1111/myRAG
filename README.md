@@ -85,6 +85,65 @@ REST API 路徑不變；`POST /demo/ask` 新增可選的 `conversation_history` 
 
 解析限制：不讀 PPT 講者備註；PPT 頁面是解析內容檢視，未還原完整排版；Word 未還原頁碼與原始圖文順序；Excel 讀取公式文字而不計算公式，內嵌圖表/圖片尚未支援。PDF 未保證複雜版面的閱讀順序。OCR 是文字辨識，不代表理解圖表關係。舊版 `.doc/.ppt/.xls` 請先另存為新格式。SVG/EMF 等無法解碼的嵌入圖不會宣稱成功理解。
 
+## 現在與未來企業共用版的架構
+
+建議演進方向是 **Python / FastAPI + LightRAG + MinIO + PostgreSQL（含 pgvector）+ 公司 LLM API**，共用階段再部署到既有 K8s。以下「未來建議」尚未實作；目前下載 ZIP 仍只需要 Windows、Python 3.12 與 CPU，不用先申請這些服務。
+
+| 用途 | 現在本機版 | 未來建議 |
+|---|---|---|
+| UI、REST API、RAG 引擎 | Python、FastAPI、LightRAG | 保留並延伸 |
+| 文件原檔、圖片、解析產物 | 本機資料夾 | 公司既有 MinIO / S3 |
+| 文件目錄、版本、權限、對話 | 目錄與狀態用 JSON；對話在分頁記憶體；尚無完整版本與權限管理 | PostgreSQL 應用資料表 |
+| 向量索引 | NanoVectorDB | PostgreSQL + pgvector（PGVectorStorage） |
+| 知識圖譜 | NetworkX | PostgreSQL 一般資料表（PGTableGraphStorage） |
+| LightRAG 文字片段、快取、文件狀態 | 本機 JSON | PGKVStorage、PGDocStatusStorage |
+| 文件解析、建索引 | 與 API 同一服務內處理 | 獨立背景 worker，初期單一索引寫入者 |
+| Embedding | CPU 本機模型，也可設定 API | 先沿用，有合適的公司 API 再評估切換 |
+| LLM | 設定的 OpenAI 相容 API | 公司 LLM API |
+| 部署 | Windows 本機、單一服務程序 | 企業共用階段再上 K8s |
+
+### 為什麼選這些技術？
+
+沿用現有 MinIO 保存原檔與圖片，讓 PostgreSQL 集中處理結構化資料、向量與圖譜，可減少需要維運的產品。LightRAG 已提供上述 PostgreSQL 儲存介面，PGTableGraphStorage 不要求 Neo4j 或 Apache AGE；但本專案仍需完成儲存轉接、資料搬遷與整合驗證，不能只換設定就視為可正式上線。[LightRAG 官方儲存文件](https://github.com/HKUDS/LightRAG/blob/main/docs/LightRAG-API-Server.md)
+
+PostgreSQL 與 pgvector 的供應及安裝權限仍要確認。雖然公司已有 Oracle，目前鎖定的 LightRAG 版本沒有註冊 Oracle 後端；直接選它需要自行維護轉接。若公司政策只允許 Oracle，再確認版本、向量功能及開發成本。詳細取捨與官方來源見 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
+初期不增加 Redis、Elasticsearch、Neo4j 或 Milvus。任務可先以 PostgreSQL 任務表管理；待實際出現吞吐、精確搜尋、複雜圖譜查詢或向量效能瓶頸，再加入相應服務。任務表與 worker 的可靠領取、失敗重試及當機恢復都屬於後續開發，並非目前已有功能。
+
+### 「背景解析與建索引」是 batch job 嗎？
+
+是背景工作，但**不必等每天固定時間跑一批**。建議一般上傳採用「上傳後排入佇列，持續運作的 worker 接著處理」；大量歷史資料匯入或整批重建索引時，才使用批次排程。也不需要每上傳一份文件就啟動一個 Kubernetes Job。
+
+```text
+上傳文件 → 保存原檔、建立任務 → UI 顯示等待處理
+                              ↓
+                    背景 worker 領取任務
+                              ↓
+             解析文字／表格／圖片，需要時做 OCR
+                              ↓
+            保留來源位置 → 切分片段 → 計算 Embedding
+                              ↓
+                       寫入向量索引
+                              ↓
+            若啟用 GraphRAG：LLM 抽取實體與關係、建圖
+                              ↓
+                     UI 更新完成或失敗狀態
+```
+
+這是未來工作流程示意；不同格式可解析的內容仍受上方「這一版的邊界」限制。解析是把文件轉成可處理的內容；建索引是把這些內容整理成可檢索的片段、向量，以及選配的圖譜。兩者主要發生在匯入、文件更新或重建時。
+
+使用者搜尋時，會將問題轉成查詢向量等檢索條件，讀取**已建立的索引**；不會每次重新解析整份文件。RAG 問答再把檢索證據交給 LLM 生成回答。
+
+目前服務已有背景索引處理，但仍與網站 API 共用同一個 Python 服務，尚未拆成可獨立恢復的任務服務。未來拆開的目的，是讓耗時工作可以獨立重試、控制併發與擴充；「背景執行」不代表自動獲得當機恢復能力，這部分需要持久化任務與去重機制。
+
+### 建議落地順序
+
+1. **本機品質驗證**：先用公司真實文件確認搜尋命中、表格與圖片解析、引用位置及 LLM 用量。
+2. **小範圍共用**：接 MinIO、PostgreSQL、背景任務與公司登入／文件權限；補上備份還原、刪除傳播及稽核。權限需涵蓋檢索、圖譜、原檔、圖片與快取。
+3. **依負載擴充**：觀察分片數、圖譜規模、同時查詢人數、索引等待時間和查詢延遲，再決定增加 worker 或專用服務。不能只用「一萬份文件」決定架構。
+
+換儲存後端需規劃搬遷與重建；換 Embedding 模型需重建向量。未來 K8s 若使用 Linux，須另外準備公司核准的 Linux 套件與 image，不能直接使用目前 Windows wheelhouse。完整規劃見 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
 ## 第一次安裝 / 帶入公司
 
 需要 **Windows x64、Python 3.12 x64**。已驗證的本機 Python 為 3.12.14；不直接使用本機其他專案的 Python 3.14。獨立 `.venv` 不修改全域套件。
