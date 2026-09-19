@@ -1,4 +1,5 @@
 import unittest
+import json
 from unittest.mock import patch, AsyncMock
 from demo.llm_gateway import Pacer, requests_per_minute
 from demo.llm_gateway import install_gateway
@@ -28,6 +29,19 @@ class RateLimitTests(unittest.IsolatedAsyncioTestCase):
 
 
 class DailyQuotaTests(unittest.TestCase):
+    def test_groq_reasoning_defaults_leave_room_for_output(self):
+        app = FastAPI()
+        install_gateway(app, {'llm': {'base_url': 'https://api.groq.com/openai/v1', 'api_key': 'fixture'}})
+        real_client = httpx.AsyncClient
+        captured = []
+        def reply(request):
+            captured.append(json.loads(request.content))
+            return httpx.Response(200, json={'choices': []})
+        with patch('demo.llm_gateway.httpx.AsyncClient', side_effect=lambda **kwargs: real_client(transport=httpx.MockTransport(reply), **kwargs)), TestClient(app) as client:
+            self.assertEqual(client.post('/local/llm/chat/completions', json={'model': 'openai/gpt-oss-120b', 'messages': []}).status_code, 200)
+        self.assertEqual(captured[0]['reasoning_effort'], 'low')
+        self.assertEqual(captured[0]['max_completion_tokens'], 4096)
+
     def test_daily_quota_does_not_repeat_external_calls(self):
         app = FastAPI()
         install_gateway(app, {'llm': {'base_url': 'https://generativelanguage.googleapis.com/v1beta/openai', 'api_key': 'fixture'}})

@@ -91,6 +91,8 @@ Gemini 低額度保護：當 LLM 網址是 `generativelanguage.googleapis.com`�
 
 Groq 免費額度保護：`api.groq.com` 預設每分鐘 1 次、同時 1 次請求。原因是建圖提示詞較長，實測單次約需 6,000 tokens，而帳號限制為每分鐘 8,000 tokens；只限制請求次數為每分鐘 30 次並不足夠。此保守節流不是精確 token 配額管理，單次超過可用 token 上限、每日用量或其他程式共用額度仍可能失敗。
 
+Groq 的 `openai/gpt-oss-*` 模型若未指定相關參數，轉接預設 `reasoning_effort=low`、`max_completion_tokens=4096`，避免預設推理耗盡輸出額度卻沒有產生抽取文字；可用 config.json 的 `groq_reasoning_effort` 與 `groq_max_completion_tokens` 調整。
+
 公司提供 Embedding 時，修改 `config.json` 的 `embedding`：
 
 ```json
