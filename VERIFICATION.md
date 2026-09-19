@@ -4,6 +4,12 @@
 
 ## 已實測
 
+- Git 攜帶的離線資源共 439,947,442 bytes，分成 10 個一般 Git 檔案；每片及完整封存檔均有 SHA-256，不使用 Git LFS。
+- 從 Git 暫存區匯出全新 `.reproduction-test` 目錄，僅帶程式與資源分片，使用 Python 3.12.14 執行 `tools/bootstrap.py` 成功：建立獨立虛擬環境、完全以 `--no-index` 安裝、`pip check` 與啟動前檢查通過。
+- 該全新目錄再次通過 `tools/offline_probe.py`：拒絕網路連線時，384 維 CPU Embedding、兩種 tokenizer、LightRAG 匯入和 CPU OCR 均可運作。
+- 該全新目錄以 9622 連接埠啟動，匯入全部 10 份合成範例，`tools/smoke.py` 的 17 項真實 HTTP 整合檢查全部通過；測試結束後正常關閉，原本 9621 服務與資料不受影響。
+- 目前完整單元／契約測試為 12 項，全部通過，包含後續新增的重複文件狀態與供應商節流處理。下列 7 項是初版驗證紀錄。
+
 - 原生啟動 LightRAG 1.5.7、上游 WebUI、研究搜尋 UI 與 REST API。
 - 重啟後從磁碟載入索引，仍可搜尋中文研究範例；重複啟動同一資料夾會拒絕。
 - `tests/test_parser.py` 的 5 項測試通過，涵蓋 PPTX、DOCX、XLSX、圖片與掃描式 PDF OCR。

@@ -3,7 +3,7 @@ cd /d "%~dp0"
 set PYTHONUTF8=1
 set PYTHONIOENCODING=utf-8
 if not exist ".venv\Scripts\python.exe" (
-  echo Run Setup.ps1 with Python 3.12 first. See README.md.
+  echo Run Bootstrap.cmd with Python 3.12 first. See README.md.
   pause
   exit /b 1
 )

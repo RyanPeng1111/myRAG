@@ -13,3 +13,5 @@ backups/
 .offline-test/
 *.log
 dist/
+.reproduction-test/
+.cache-publication/

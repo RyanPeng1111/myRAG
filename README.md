@@ -2,6 +2,21 @@
 
 以 **LightRAG 1.5.7** 的伺服器、文件索引、向量檢索、圖譜引擎與管理 UI 為基底，增加 Windows 啟動流程、CPU Embedding/OCR、研究搜尋入口、Office 圖片及來源定位轉接。不是重寫 RAG 引擎。
 
+## 公司電腦：從 Git 重現（建議使用這個流程）
+
+需求：Windows x64、Python 3.12 x64、可使用 Git。完整儲存庫包含約 440 MB 離線資源分片，不需要 Git LFS、Docker、GPU、WSL、Node.js 或額外資料庫。
+
+1. 第一次在公司使用 `git clone <這個儲存庫的網址> myRAG`，進入資料夾；已經有 checkout 時才使用 `git pull`。
+2. 雙擊 **Bootstrap.cmd**。它會驗證資源 SHA-256、解開模型與套件、建立 `.venv`，完全使用本地套件安裝，不連 PyPI 或 Hugging Face。
+3. 若 Python 沒有登錄 `py` launcher，在命令提示字元執行 `Bootstrap.cmd "C:\實際Python312路徑\python.exe"`。
+4. 雙擊 **Start.cmd**，保留服務視窗，開啟 **http://127.0.0.1:9621/demo/**。
+5. 另雙擊 **Load-Samples.cmd** 匯入合成範例；等文件頁顯示「已建立索引」後，即可測試向量搜尋、OCR 與來源圖片。
+6. 在「模型設定」填入公司 LLM 網址、API key、model name。儲存後用 Stop.cmd、Start.cmd 重啟，即可測試 RAG 問答。要建圖，開啟圖譜並對選定文件重建索引。
+
+這是重現相同程式、模型與樣本的流程，不會攜帶開發者的 API key、LLM 快取或工作中的資料索引；LLM 回答與抽取結果不保證逐字相同。先在未設定 LLM 時載入樣本，可避免匯入時意外消耗外部 API 額度。公司不必申請 Embedding API。
+
+更新前先停止服務再 `git pull`，重跑 Bootstrap.cmd 更新套件；它會保留本機 config.json 與 data/。若公司掃描或終端防護拒絕套件，需要依公司流程處理，本流程不會跳過安全檢查。
+
 ## 現在這台電腦怎麼用
 
 專案位於 `D:\proj\myRAG`。如果服務仍運作，開啟：
@@ -60,7 +75,7 @@
 
 `Prepare.ps1` 是明確的連外準備階段，下載本機 Embedding 與 tokenizer；啟動階段使用本地模型，不臨時下載。OCR 模型包含於套件 wheel 中。企業 CA 可設定 `config.json` 的 `ca_bundle`，不關閉 TLS 驗證。
 
-**只有 GitHub 程式碼並不足以離線安裝**。若內網不能抓套件/模型，先在可連網的同架構 Windows 機器執行：
+完整 Git 儲存庫已包含 `offline/` 資源分片；上述 Bootstrap.cmd 即可離線安裝。以下是維護者重新準備資源的替代流程：
 
 ```powershell
 .\Prepare-Offline.ps1
@@ -75,7 +90,7 @@
 
 不要複製 `.venv` 當作可攜環境，也不要把你個人的 `config.json` 或真實公司資料提交 GitHub。Nexus 可透過標準 pip 設定指定，公司認證資訊不要寫在專案裡。
 
-本機已產出 `dist/myRAG-source.zip`（程式碼）與 `dist/myRAG-offline-resources.zip`（套件與模型，約 440 MB）。解壓到同一個專案資料夾，再依上方離線安裝步驟操作；若只拿程式碼進內網，仍需從核准來源取得模型與套件。`dist/manifest.json` 提供 SHA-256。這些包不含密鑰、使用者文件或 Python 安裝程式。可執行 `python tools/package.py` 重新打包。Git 儲存庫已在本機初始化，尚未上傳 GitHub。
+`dist/myRAG-source.zip` 現在包含程式碼與 `offline/` 分片，可解壓後直接使用 Bootstrap.cmd。`dist/myRAG-offline-resources.zip` 是同一批套件與模型的獨立資源包，供替代安裝流程使用，不必兩包都下載。`dist/manifest.json` 提供 SHA-256。這些包不含密鑰、使用者文件或 Python 安裝程式。可執行 `python tools/package.py` 重新打包；更新離線資源後，再執行 `python tools/split_resources.py` 更新 Git 分片。
 
 ## 模型設定
 
